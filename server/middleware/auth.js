@@ -11,8 +11,14 @@ function authMiddleware(req, res, next) {
     return res.status(401).json({ error: "Missing token" });
   }
 
+  if (!process.env.JWT_SECRET) {
+    console.error("auth middleware: JWT_SECRET is not set");
+    return res.status(500).json({ error: "Server misconfigured" });
+  }
+
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
+    /** Decoded access token: sub, username, email, iat, exp */
     req.user = payload;
     next();
   } catch {
