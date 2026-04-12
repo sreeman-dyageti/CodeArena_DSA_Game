@@ -7,7 +7,7 @@ import { Server } from "socket.io";
 import authRoutes from "./routes/auth.js";
 import battleRoutes from "./routes/battle.js";
 import leaderboardRoutes from "./routes/leaderboard.js";
-import { registerBattleGateway } from "./socket/battleGateway.js";
+import { initSocket } from "./socket/matchmaking.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -35,7 +35,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/battles", battleRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
 
-registerBattleGateway(io);
+initSocket(io);
 
 const PORT = Number(process.env.PORT) || 5000;
 
