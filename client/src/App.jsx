@@ -32,15 +32,7 @@ function AppRoutes() {
             <LearnScreen />
           </ProtectedRoute>
         }
-      />
-      <Route
-        path="/battle/:levelId"
-        element={
-          <ProtectedRoute>
-            <BattleScreen />
-          </ProtectedRoute>
-        }
-      />
+      />    
       <Route
         path="/leaderboard"
         element={
@@ -48,7 +40,7 @@ function AppRoutes() {
             <LeaderboardScreen />
           </ProtectedRoute>
         }
-      />
+      /> 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
