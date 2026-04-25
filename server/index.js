@@ -8,6 +8,7 @@ import authRoutes from "./routes/auth.js";
 import battleRoutes from "./routes/battle.js";
 import leaderboardRoutes from "./routes/leaderboard.js";
 import { initSocket } from "./socket/matchmaking.js";
+import levelRoutes from "./routes/levels.js"; 
 
 const app = express();
 const server = http.createServer(app);
@@ -34,6 +35,7 @@ app.get("/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/battles", battleRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
+app.use("/api/levels", levelRoutes);   
 
 initSocket(io);
 
