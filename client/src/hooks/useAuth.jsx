@@ -28,23 +28,27 @@ export function AuthProvider({ children }) {
       if (payload.exp * 1000 > Date.now()) {
         setUser({ id: payload.sub, username: payload.username, email: payload.email });
       } else {
-        // Try refresh
-        const refreshToken = localStorage.getItem("refreshToken");
-        if (refreshToken) {
-          api
-            .post("/api/auth/refresh", { refreshToken })
-            .then(({ data }) => {
-              localStorage.setItem("accessToken", data.accessToken);
-              const p = JSON.parse(atob(data.accessToken.split(".")[1]));
-              setUser({ id: p.sub, username: p.username, email: p.email });
-            })
-            .catch(() => logout())
-            .finally(() => setIsLoading(false));
-          return;
-        } else {
-          logout();
-        }
-      }
+  // Token expired — try refresh before giving up
+  const refreshToken = localStorage.getItem("refreshToken");
+  if (refreshToken) {
+    api
+      .post("/api/auth/refresh", { refreshToken })
+      .then(({ data }) => {
+        localStorage.setItem("accessToken", data.accessToken);
+        const p = JSON.parse(atob(data.accessToken.split(".")[1]));
+        setUser({ id: p.sub, username: p.username, email: p.email });
+      })
+      .catch(() => {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        setUser(null);
+      })
+      .finally(() => setIsLoading(false));
+    return; // Don't call setIsLoading(false) yet — wait for refresh
+  } else {
+    logout();
+  }
+}
     } catch {
       logout();
     }
