@@ -40,7 +40,7 @@ export default function MapScreen() {
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState("");
   // For MVP: unlock first 3, rest locked (will use real progress in Phase 2)
-  const [unlockedUpTo] = useState(3);
+  const [unlockedUpTo] = useState(1);
 
   useEffect(() => {
     api.get("/api/levels")
