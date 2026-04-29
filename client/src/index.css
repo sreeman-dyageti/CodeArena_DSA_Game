@@ -52,18 +52,28 @@
 
 body {
   margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
 }
 
 #root {
-  width: 1126px;
+  width: 100%;
   max-width: 100%;
   margin: 0 auto;
   text-align: center;
-  border-inline: 1px solid var(--border);
+  border-inline: none;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  padding: 0;
+}
+
+@media (min-width: 1126px) {
+  #root {
+    border-inline: 1px solid var(--border);
+  }
 }
 
 h1,
@@ -108,4 +118,35 @@ code {
   line-height: 135%;
   padding: 4px 8px;
   background: var(--code-bg);
+}
+
+/* Mobile-First Responsive Design */
+@media (max-width: 768px) {
+  :root {
+    font-size: 14px;
+  }
+  
+  h1 {
+    font-size: 28px;
+    margin: 16px 0;
+  }
+  
+  h2 {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    font-size: 13px;
+  }
+  
+  h1 {
+    font-size: 24px;
+    margin: 12px 0;
+  }
+  
+  h2 {
+    font-size: 16px;
+  }
 }
