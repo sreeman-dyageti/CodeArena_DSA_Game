@@ -1,229 +1,165 @@
+/**
+ * Self-hosted code judge — no external API needed.
+ *
+ * JavaScript → Node.js vm module (sandboxed, safe)
+ * Python     → child_process spawning local python3
+ *
+ * Supports the examples shape: [{ args: [...], expected: ... }]
+ */
+
 import vm from "node:vm";
 import { isDeepStrictEqual } from "node:util";
+import { spawn } from "node:child_process";
 
-// ─── Supported language IDs ───────────────────────────────────────────────────
-// JavaScript (Node.js) → 63
-// Python 3             → 71
-// Java                 → 62
-export const LANGUAGE_IDS = {
-  javascript: 63,
-  python: 71,
-  java: 62,
-};
+// ─── JavaScript judge (vm sandbox) ───────────────────────────────────────────
 
-// ─── Judge0 config (set in server/.env) ──────────────────────────────────────
-const JUDGE0_BASE = "https://judge0-ce.p.rapidapi.com";
-const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY ?? "";
-const RAPIDAPI_HOST = "judge0-ce.p.rapidapi.com";
-
-const POLL_INTERVAL_MS = 500;
-const MAX_RETRIES = 10;
-
-// ─── Helper: sleep ────────────────────────────────────────────────────────────
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-// ─── Helper: shared RapidAPI headers ─────────────────────────────────────────
-function rapidApiHeaders() {
-  return {
-    "Content-Type": "application/json",
-    "X-RapidAPI-Key": RAPIDAPI_KEY,
-    "X-RapidAPI-Host": RAPIDAPI_HOST,
-  };
-}
-
-/**
- * Submit code to Judge0, poll until a result is available, and return a
- * structured pass/fail result.
- *
- * @param {string} sourceCode      - The user's source code
- * @param {number} languageId      - Judge0 language ID (63 = JS, 71 = Python, 62 = Java)
- * @param {string} stdin           - Standard input for the test case
- * @param {string} expectedOutput  - The expected stdout (trimmed for comparison)
- * @returns {Promise<{
- *   passed: boolean,
- *   stdout: string,
- *   stderr: string,
- *   time_ms: number,
- *   status: string
- * }>}
- */
-export async function executeCode(sourceCode, languageId, stdin, expectedOutput) {
-  // 1. Submit the code
-  const submitRes = await fetch(`${JUDGE0_BASE}/submissions?base64_encoded=false&wait=false`, {
-    method: "POST",
-    headers: rapidApiHeaders(),
-    body: JSON.stringify({
-      source_code: sourceCode,
-      language_id: languageId,
-      stdin: stdin ?? "",
-    }),
-  });
-
-  if (!submitRes.ok) {
-    const errText = await submitRes.text().catch(() => "");
-    throw new Error(`Judge0 submission failed (${submitRes.status}): ${errText}`);
-  }
-
-  const { token } = await submitRes.json();
-  if (!token) throw new Error("Judge0 did not return a submission token");
-
-  // 2. Poll until status.id > 2 (1 = In Queue, 2 = Processing)
-  let retries = 0;
-  let result = null;
-
-  while (retries < MAX_RETRIES) {
-    await sleep(POLL_INTERVAL_MS);
-
-    const pollRes = await fetch(
-      `${JUDGE0_BASE}/submissions/${token}?base64_encoded=false&fields=status,stdout,stderr,time,memory,compile_output`,
-      { headers: rapidApiHeaders() }
-    );
-
-    if (!pollRes.ok) {
-      retries++;
-      continue;
-    }
-
-    const data = await pollRes.json();
-
-    // status.id: 1 = In Queue, 2 = Processing, 3+ = finished
-    if (data.status && data.status.id > 2) {
-      result = data;
-      break;
-    }
-
-    retries++;
-  }
-
-  if (!result) {
-    throw new Error(`Judge0 timed out after ${MAX_RETRIES} retries for token ${token}`);
-  }
-
-  const stdout = result.stdout ?? "";
-  const stderr = result.stderr ?? result.compile_output ?? "";
-  // Judge0 returns time as a string like "0.042" (seconds)
-  const time_ms = result.time ? Math.round(parseFloat(result.time) * 1000) : 0;
-  const statusDesc = result.status?.description ?? "Unknown";
-
-  const passed =
-    result.status?.id === 3 && // 3 = Accepted
-    stdout.trim() === String(expectedOutput ?? "").trim();
-
-  return { passed, stdout, stderr, time_ms, status: statusDesc };
-}
-
-/**
- * Run a level's full test-case suite against the submitted code.
- *
- * @param {string} code        - The user's source code
- * @param {number} languageId  - Judge0 language ID
- * @param {{ testCases: Array<{ input: string, expectedOutput: string }> }} level
- * @returns {Promise<{
- *   allPassed: boolean,
- *   results: Array<{ testCase: number, passed: boolean, stdout: string, stderr: string, time_ms: number, status: string }>,
- *   totalTimeMs: number
- * }>}
- */
-export async function judgeLevel(code, languageId, level) {
-  const testCases = Array.isArray(level?.testCases) ? level.testCases : [];
-
-  if (testCases.length === 0) {
-    return { allPassed: false, results: [], totalTimeMs: 0 };
-  }
-
-  const results = [];
-  let totalTimeMs = 0;
-
-  for (let i = 0; i < testCases.length; i++) {
-    const { input, expectedOutput } = testCases[i];
-
-    let result;
-    try {
-      result = await executeCode(code, languageId, input, expectedOutput);
-    } catch (err) {
-      result = {
-        passed: false,
-        stdout: "",
-        stderr: err?.message ?? "Unknown error",
-        time_ms: 0,
-        status: "Error",
-      };
-    }
-
-    results.push({ testCase: i + 1, ...result });
-    totalTimeMs += result.time_ms;
-  }
-
-  const allPassed = results.every((r) => r.passed);
-  return { allPassed, results, totalTimeMs };
-}
-
-// ─── Legacy: VM-based JS-only judge (kept for backward compatibility) ─────────
-
-/**
- * Runs user code in an isolated context and checks `solve` against level.examples.
- * Expected example shape: `{ args: [...], expected: ... }` or `{ input: ..., output: ... }`
- * (single-arg problems can use `args: [x]` or `input` as a single value).
- *
- * @param {{ code: string, language: string, levelRow: Record<string, unknown> }} params
- * @returns {{ correct: boolean, message?: string }}
- */
-export async function judgeSubmission({ code, language, levelRow }) {
-  const lang = String(language || "javascript").toLowerCase();
-  if (lang !== "javascript") {
-    return { correct: false, message: "Judging is only implemented for JavaScript" };
-  }
-
-  const rawExamples = levelRow.examples;
-  const examples = Array.isArray(rawExamples) ? rawExamples : [];
-  if (examples.length === 0) {
-    return {
-      correct: false,
-      message: "This level has no public tests configured yet",
-    };
-  }
-
+function judgeJS(code, examples) {
+  // Create a fresh sandbox
   const sandbox = {};
   const ctx = vm.createContext(sandbox);
 
+  // Load user code into sandbox
   try {
     vm.runInContext(
-      `${String(code || "")}\n;this.__ca_solve = typeof solve !== "undefined" ? solve : null;`,
+      `${code}\n;this.__solve = typeof solve !== "undefined" ? solve : null;`,
       ctx,
       { timeout: 3000 }
     );
   } catch (err) {
-    return { correct: false, message: err?.message || "Runtime error while loading your solution" };
+    return { correct: false, message: `Syntax / Runtime error: ${err.message}` };
   }
 
-  const solve = ctx.__ca_solve;
+  const solve = ctx.__solve;
   if (typeof solve !== "function") {
-    return { correct: false, message: "Define a top-level function named `solve`" };
+    return { correct: false, message: 'Define a function named "solve" in your solution.' };
   }
 
+  // Run each test case
   for (let i = 0; i < examples.length; i++) {
     const ex = examples[i];
-    const args =
-      ex && Array.isArray(ex.args)
-        ? ex.args
-        : ex && "args" in ex && ex.args !== undefined && !Array.isArray(ex.args)
-          ? [ex.args]
-          : ex && "input" in ex
-            ? [ex.input]
-            : [];
-    const expected = ex && ("expected" in ex ? ex.expected : "output" in ex ? ex.output : undefined);
+    const args = Array.isArray(ex.args) ? ex.args : [ex.input];
+    const expected = "expected" in ex ? ex.expected : ex.output;
 
     let got;
     try {
       got = solve(...args);
     } catch (err) {
-      return { correct: false, message: `Test ${i + 1}: ${err?.message || "Runtime error"}` };
+      return { correct: false, message: `Runtime error on test ${i + 1}: ${err.message}` };
     }
 
     if (!isDeepStrictEqual(got, expected)) {
-      return { correct: false, message: `Wrong answer on example ${i + 1}` };
+      return {
+        correct: false,
+        message: `Wrong answer on test ${i + 1}.\nInput: ${JSON.stringify(args)}\nExpected: ${JSON.stringify(expected)}\nGot: ${JSON.stringify(got)}`,
+      };
     }
   }
 
-  return { correct: true };
+  return { correct: true, message: "All tests passed!" };
+}
+
+// ─── Python judge (child_process) ────────────────────────────────────────────
+
+function judgePython(code, examples) {
+  return new Promise((resolve) => {
+    // Build a test harness that runs each example
+    const harness = `
+import json, sys
+
+${code}
+
+examples = json.loads(sys.argv[1])
+for i, ex in enumerate(examples):
+    args = ex.get("args", [ex.get("input")])
+    expected = ex.get("expected", ex.get("output"))
+    try:
+        got = solve(*args)
+        if got != expected:
+            print(json.dumps({
+                "correct": False,
+                "message": f"Wrong answer on test {i+1}. Expected {json.dumps(expected)}, got {json.dumps(got)}"
+            }))
+            sys.exit(0)
+    except Exception as e:
+        print(json.dumps({
+            "correct": False,
+            "message": f"Runtime error on test {i+1}: {str(e)}"
+        }))
+        sys.exit(0)
+
+print(json.dumps({"correct": True, "message": "All tests passed!"}))
+`;
+
+    const examplesJson = JSON.stringify(examples);
+    const proc = spawn("python3", ["-c", harness, examplesJson], {
+      timeout: 5000,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    proc.stdout.on("data", (d) => (stdout += d.toString()));
+    proc.stderr.on("data", (d) => (stderr += d.toString()));
+
+    proc.on("close", (code) => {
+      if (code !== 0 && !stdout) {
+        return resolve({ correct: false, message: `Python error: ${stderr.trim() || "Unknown error"}` });
+      }
+      try {
+        const result = JSON.parse(stdout.trim());
+        resolve(result);
+      } catch {
+        resolve({ correct: false, message: `Python output parse error: ${stdout.trim()}` });
+      }
+    });
+
+    proc.on("error", (err) => {
+      // python3 not installed
+      resolve({ correct: false, message: `Python not available on server: ${err.message}` });
+    });
+  });
+}
+
+// ─── Main export — used by matchmaking.js ────────────────────────────────────
+
+/**
+ * Judges a submission against level examples.
+ *
+ * @param {{ code: string, language: string, levelRow: object }} params
+ * @returns {Promise<{ correct: boolean, message: string }>}
+ */
+export async function judgeSubmission({ code, language, levelRow }) {
+  const lang = String(language || "javascript").toLowerCase();
+  const examples = Array.isArray(levelRow?.examples) ? levelRow.examples : [];
+
+  if (examples.length === 0) {
+    return { correct: false, message: "This level has no test cases configured." };
+  }
+
+  if (!code || !code.trim()) {
+    return { correct: false, message: "No code submitted." };
+  }
+
+  if (lang === "javascript") {
+    return judgeJS(code, examples);
+  }
+
+  if (lang === "python") {
+    return judgePython(code, examples);
+  }
+
+  return { correct: false, message: `Language "${lang}" is not supported yet. Use JavaScript or Python.` };
+}
+
+// ─── Legacy exports (keep for compatibility) ─────────────────────────────────
+
+export const LANGUAGE_IDS = { javascript: 63, python: 71, java: 62 };
+
+export async function executeCode() {
+  throw new Error("executeCode is not used — use judgeSubmission instead");
+}
+
+export async function judgeLevel() {
+  throw new Error("judgeLevel is not used — use judgeSubmission instead");
 }
