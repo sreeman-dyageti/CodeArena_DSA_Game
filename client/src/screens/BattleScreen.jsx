@@ -249,9 +249,9 @@ export default function BattleScreen() {
   }
 
   // ── Result overlay ─────────────────────────────────────────────────────────
-  if (phase === "result" && result) {
-    return <ResultOverlay result={result} levelId={levelId} />;
-  }
+ if (phase === "result" && result) {
+  return <ResultOverlay result={result} levelId={levelId} topic={problem?.topic} />;
+}
 
   // ── Active battle ──────────────────────────────────────────────────────────
   const urgent = timeLeft < 60;

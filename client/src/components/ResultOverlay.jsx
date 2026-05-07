@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
  *               durationMs, creditsAwarded: { winner, loser } }
  *   levelId — to go back to learn screen
  */
-export default function ResultOverlay({ result, levelId }) {
+export default function ResultOverlay({ result, levelId, topic }) {
   const navigate = useNavigate();
   const won = result?.won ?? false;
 
@@ -59,7 +59,7 @@ export default function ResultOverlay({ result, levelId }) {
         <div style={styles.btnCol}>
           <button
             style={styles.primaryBtn}
-            onClick={() => navigate(`/map/dsa`)}
+            onClick={() => navigate(topic ? `/topic/${encodeURIComponent(topic)}` : `/map/dsa`)}
           >
             🗺️ Continue Journey
           </button>
