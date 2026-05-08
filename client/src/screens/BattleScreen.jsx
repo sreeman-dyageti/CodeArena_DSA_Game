@@ -4,6 +4,7 @@ import { useAuth } from "../hooks/useAuth.jsx";
 import { useSocket } from "../hooks/useSocket.js";
 import Timer from "../components/Timer.jsx";
 import ResultOverlay from "../components/ResultOverlay.jsx";
+import api from "../api/index.js";
 
 const BATTLE_SECONDS = 15 * 60; // 15 minutes
 
@@ -99,10 +100,19 @@ export default function BattleScreen() {
       setOpponentLines((prev) => prev + 1);
     };
 
-    const handleBattleEnd = (payload) => {
+    const handleBattleEnd = async (payload) => {
       const won = payload.winnerId === user?.id;
       setResult({ ...payload, won });
       setPhase("result");
+      
+      // Mark level as complete if user won
+      if (won && levelId) {
+        try {
+          await api.post(`/api/levels/${levelId}/complete`);
+        } catch (err) {
+          console.error("Failed to mark level complete:", err);
+        }
+      }
     };
 
     const handleSubmitResult = ({ correct, message, late }) => {
