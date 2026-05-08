@@ -33,23 +33,47 @@ export default function TopicScreen() {
   const topic = decodeURIComponent(topicName);
 
   const [levels, setLevels] = useState([]);
+  const [completedLevelIds, setCompletedLevelIds] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get("/api/levels")
-      .then(({ data }) => {
-        // Filter to this topic only, sort easy → medium → hard
-        const filtered = (data.levels || [])
+    const loadData = async () => {
+      try {
+        // Fetch all levels
+        const { data: levelsData } = await api.get("/api/levels");
+        const filtered = (levelsData.levels || [])
           .filter(lv => lv.topic === topic)
           .sort((a, b) => DIFFICULTY_ORDER[a.difficulty] - DIFFICULTY_ORDER[b.difficulty]);
         setLevels(filtered);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+
+        // Fetch user's completed levels
+        try {
+          const { data: progressData } = await api.get("/api/levels/progress/completed");
+          setCompletedLevelIds(progressData.completedLevelIds || []);
+        } catch (err) {
+          console.error("Failed to fetch progress:", err);
+          setCompletedLevelIds([]);
+        }
+      } catch (err) {
+        console.error("Failed to load levels:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadData();
   }, [topic]);
 
-  // For MVP: only level 1 unlocked
-  const unlockedUpTo = 1;
+  // Calculate how many levels are unlocked
+  // First level is always unlocked, then each completed level unlocks the next
+  let unlockedUpTo = 1; // First level is always available
+  for (let i = 0; i < levels.length; i++) {
+    if (completedLevelIds.includes(levels[i].id)) {
+      unlockedUpTo = i + 2; // Unlock the next level
+    } else {
+      break; // Stop at first incomplete level
+    }
+  }
 
   // SVG paths
   const paths = NODE_CONFIGS.map((pos, i) => {
