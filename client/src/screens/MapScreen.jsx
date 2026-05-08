@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.jsx";
+import api from "../api/index.js";
 
-const TOPICS = [
+const TOPIC_CONFIGS = [
   {
     id: "Arrays",
     icon: "🎯",
@@ -9,9 +11,7 @@ const TOPICS = [
     shadow: "#A8235A",
     glow: "rgba(255,107,157,.45)",
     description: "Foundation of DSA. Master arrays before anything else.",
-    levels: 5,
     difficulty: "Beginner",
-    locked: false,
     companies: ["Google", "Amazon", "Microsoft"],
   },
   {
@@ -21,9 +21,7 @@ const TOPICS = [
     shadow: "#CC7213",
     glow: "rgba(255,159,67,.4)",
     description: "Eliminate nested loops. O(n) solutions to hard problems.",
-    levels: 5,
     difficulty: "Intermediate",
-    locked: true,
     companies: ["Meta", "Apple", "Netflix"],
   },
   {
@@ -33,9 +31,7 @@ const TOPICS = [
     shadow: "#007B79",
     glow: "rgba(0,206,201,.4)",
     description: "Subarray and substring problems. Interview favourite.",
-    levels: 5,
     difficulty: "Intermediate",
-    locked: true,
     companies: ["Amazon", "Google", "Uber"],
   },
 ];
@@ -53,6 +49,61 @@ export default function MapScreen() {
   const navigate = useNavigate();
   const { track } = useParams();
   const { user } = useAuth();
+  
+  const [levels, setLevels] = useState([]);
+  const [completedLevelIds, setCompletedLevelIds] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Fetch all levels
+        const { data: levelsData } = await api.get("/api/levels");
+        setLevels(levelsData.levels || []);
+
+        // Fetch user's completed levels
+        try {
+          const { data: progressData } = await api.get("/api/levels/progress/completed");
+          setCompletedLevelIds(progressData.completedLevelIds || []);
+        } catch (err) {
+          console.error("Failed to fetch progress:", err);
+        }
+      } catch (err) {
+        console.error("Failed to load levels:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadData();
+  }, []);
+
+  // Calculate which topics are unlocked based on completed levels
+  const getTopicsWithStatus = () => {
+    return TOPIC_CONFIGS.map((config, topicIndex) => {
+      // Get levels in this topic
+      const topicLevels = levels.filter(l => l.topic === config.id);
+      
+      if (topicIndex === 0) {
+        // First topic is always unlocked
+        return { ...config, locked: false, levels: topicLevels.length };
+      }
+      
+      // Check if all levels in previous topic are completed
+      const prevTopic = TOPIC_CONFIGS[topicIndex - 1];
+      const prevTopicLevels = levels.filter(l => l.topic === prevTopic.id);
+      const prevTopicComplete = prevTopicLevels.length > 0 && 
+        prevTopicLevels.every(l => completedLevelIds.includes(l.id));
+      
+      return {
+        ...config,
+        locked: !prevTopicComplete,
+        levels: topicLevels.length
+      };
+    });
+  };
+
+  const topicsWithStatus = getTopicsWithStatus();
 
   return (
     <div style={s.bg}>
@@ -96,7 +147,7 @@ export default function MapScreen() {
         </p>
 
         <div style={s.cardGrid}>
-          {TOPICS.map((topic, i) => (
+          {topicsWithStatus.map((topic, i) => (
             <div key={topic.id} style={{ ...s.card, opacity: topic.locked ? 0.55 : 1, cursor: topic.locked ? "not-allowed" : "pointer" }}
               onClick={() => !topic.locked && navigate(`/topic/${encodeURIComponent(topic.id)}`)}>
 
@@ -104,7 +155,7 @@ export default function MapScreen() {
               {topic.locked && (
                 <div style={s.lockOverlay}>
                   <div style={s.lockIcon}>🔒</div>
-                  <div style={s.lockText}>Complete {TOPICS[i-1]?.id} first</div>
+                  <div style={s.lockText}>Complete {TOPIC_CONFIGS[i-1]?.id} first</div>
                 </div>
               )}
 
