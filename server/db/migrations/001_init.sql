@@ -55,3 +55,11 @@ CREATE TABLE leaderboard_weekly (
   credits_weekly INTEGER NOT NULL DEFAULT 0,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE user_progress (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  level_id UUID NOT NULL REFERENCES levels (id) ON DELETE CASCADE,
+  completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(user_id, level_id)
+);
