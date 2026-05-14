@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.jsx";
 import api from "../api/index.js";
+import { Target, Hand, BookOpen, Brain, Calculator, Trophy, Rocket, Coins, Zap, Lock, ArrowRight } from "lucide-react";
 
 const TOPIC_CONFIGS = [
   {
     id: "Arrays",
-    icon: "🎯",
+    icon: <Target size={36} color="currentColor" />,
     color: "#FF6B9D",
     shadow: "#A8235A",
     glow: "rgba(255,107,157,.45)",
@@ -16,7 +17,7 @@ const TOPIC_CONFIGS = [
   },
   {
     id: "Two Pointers",
-    icon: "✌️",
+    icon: <Hand size={36} color="currentColor" />,
     color: "#FF9F43",
     shadow: "#CC7213",
     glow: "rgba(255,159,67,.4)",
@@ -26,7 +27,7 @@ const TOPIC_CONFIGS = [
   },
   {
     id: "Sliding Window",
-    icon: "🪟",
+    icon: <BookOpen size={36} color="currentColor" />,
     color: "#00CEC9",
     shadow: "#007B79",
     glow: "rgba(0,206,201,.4)",
@@ -118,24 +119,34 @@ export default function MapScreen() {
 
       {/* Top bar */}
       <div style={s.topBar}>
-        <button onClick={() => navigate("/")} style={s.backBtn}>←</button>
+        <button onClick={() => navigate("/")} style={s.backBtn} aria-label="Back">
+          <ArrowRight size={20} style={{ transform: "rotate(180deg)" }} />
+        </button>
         <div style={{ textAlign:"center" }}>
-          <div style={s.topTitle}>{track === "dsa" ? "🧠 DSA Arena" : "📐 Aptitude Arena"}</div>
+          <div style={s.topTitle}>
+            {track === "dsa" ? (
+              <><Brain size={20} style={{ marginRight: 6, display: "inline" }} />DSA Arena</>
+            ) : (
+              <><Calculator size={20} style={{ marginRight: 6, display: "inline" }} />Aptitude Arena</>
+            )}
+          </div>
           <div style={s.topSub}>Choose a topic to begin</div>
         </div>
-        <button onClick={() => navigate("/leaderboard")} style={s.backBtn}>🏆</button>
+        <button onClick={() => navigate("/leaderboard")} style={s.backBtn} aria-label="Leaderboard">
+          <Trophy size={20} />
+        </button>
       </div>
 
       {/* User strip */}
       {user && (
         <div style={s.userStrip}>
-          <span style={{ fontSize:14 }}>🚀</span>
+          <Rocket size={14} color="currentColor" />
           <span style={s.username}>{user.username}</span>
           <span style={s.divider}>│</span>
-          <span style={{ fontSize:13 }}>💰</span>
+          <Coins size={13} color="#FDCB6E" />
           <span style={s.credits}>{user.credits ?? 0} credits</span>
           <span style={s.divider}>│</span>
-          <span style={{ fontSize:12 }}>⚡</span>
+          <Zap size={12} color="#A29BFE" />
           <span style={s.elo}>{user.elo ?? 1000} ELO</span>
         </div>
       )}
@@ -154,7 +165,9 @@ export default function MapScreen() {
               {/* Lock overlay */}
               {topic.locked && (
                 <div style={s.lockOverlay}>
-                  <div style={s.lockIcon}>🔒</div>
+                  <div style={s.lockIcon}>
+                    <Lock size={32} color="currentColor" />
+                  </div>
                   <div style={s.lockText}>Complete {TOPIC_CONFIGS[i-1]?.id} first</div>
                 </div>
               )}
@@ -164,7 +177,9 @@ export default function MapScreen() {
 
               {/* Icon circle */}
               <div style={{ ...s.iconCircle, background: topic.locked ? "rgba(255,255,255,.08)" : `radial-gradient(circle at 35% 35%,${topic.color},${topic.shadow})`, boxShadow: topic.locked ? "none" : `0 8px 24px ${topic.color}55` }}>
-                <span style={{ fontSize:36 }}>{topic.icon}</span>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", color: "currentColor" }}>
+                  {topic.icon}
+                </div>
               </div>
 
               {/* Topic name */}
@@ -195,8 +210,9 @@ export default function MapScreen() {
 
               {/* CTA */}
               {!topic.locked && (
-                <div style={{ ...s.startBtn, background:`linear-gradient(135deg,${topic.color},${topic.shadow})`, boxShadow:`0 5px 0 ${topic.shadow}` }}>
-                  Start Topic →
+                <div style={{ ...s.startBtn, background:`linear-gradient(135deg,${topic.color},${topic.shadow})`, boxShadow:`0 5px 0 ${topic.shadow}`, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  Start Topic
+                  <ArrowRight size={16} />
                 </div>
               )}
             </div>
