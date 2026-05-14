@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api/index.js";
+import { ArrowLeft, Trophy, Target, Hand, BookOpen, Lock, Star } from "lucide-react";
 
 const DIFFICULTY_ORDER = { easy: 0, medium: 1, hard: 2 };
 const DIFF_COLOR = { easy:"#2ED573", medium:"#FDCB6E", hard:"#FF4757" };
@@ -84,7 +85,12 @@ export default function TopicScreen() {
     return { d: `M${p.cx} ${p.cy} Q${mx} ${my} ${pos.cx} ${pos.cy}`, done: i < unlockedUpTo };
   }).filter(Boolean);
 
-  const topicIcon = { "Arrays":"🎯", "Two Pointers":"✌️", "Sliding Window":"🪟" }[topic] ?? "📘";
+  const topicIconMap = {
+    "Arrays": <Target size={20} color="currentColor" />,
+    "Two Pointers": <Hand size={20} color="currentColor" />,
+    "Sliding Window": <BookOpen size={20} color="currentColor" />,
+  };
+  const topicIcon = topicIconMap[topic] ?? <BookOpen size={20} color="currentColor" />;
   const topicColor = { "Arrays":"#FF6B9D", "Two Pointers":"#FF9F43", "Sliding Window":"#00CEC9" }[topic] ?? "#A29BFE";
 
   return (
@@ -95,12 +101,19 @@ export default function TopicScreen() {
 
       {/* Top bar */}
       <div style={s.topBar}>
-        <button onClick={() => navigate(-1)} style={s.backBtn}>←</button>
+        <button onClick={() => navigate(-1)} style={s.backBtn} aria-label="Back">
+          <ArrowLeft size={20} />
+        </button>
         <div style={{ textAlign:"center" }}>
-          <div style={{ ...s.topTitle, color: topicColor }}>{topicIcon} {topic}</div>
+          <div style={{ ...s.topTitle, color: topicColor, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            {topicIcon}
+            {topic}
+          </div>
           <div style={s.topSub}>Easy → Medium → Hard · {levels.length} problems</div>
         </div>
-        <button onClick={() => navigate("/leaderboard")} style={s.backBtn}>🏆</button>
+        <button onClick={() => navigate("/leaderboard")} style={s.backBtn} aria-label="Leaderboard">
+          <Trophy size={20} />
+        </button>
       </div>
 
       {/* Progress */}
@@ -187,7 +200,7 @@ export default function TopicScreen() {
                     {/* Gloss */}
                     <div style={{ position:"absolute", top:0, left:0, right:0, height:"48%", background:"rgba(255,255,255,.15)", borderRadius:"50% 50% 0 0", pointerEvents:"none" }} />
                     {locked
-                      ? <span style={{ fontSize:22, opacity:.4 }}>🔒</span>
+                      ? <Lock size={22} opacity={0.4} color="currentColor" />
                       : <span style={{ fontSize:22 }}>{i+1}</span>
                     }
                   </button>
@@ -195,7 +208,15 @@ export default function TopicScreen() {
                   {/* Stars for completed */}
                   {done && (
                     <div style={{ position:"absolute", bottom:-22, left:"50%", transform:"translateX(-50%)", display:"flex", gap:1 }}>
-                      {[1,2,3].map(st => <span key={st} style={{ fontSize:10, opacity: st<=2?1:.2 }}>⭐</span>)}
+                      {[1,2,3].map(st => (
+                        <Star
+                          key={st}
+                          size={10}
+                          color="currentColor"
+                          fill={st<=2 ? "currentColor" : "none"}
+                          opacity={st<=2?1:.2}
+                        />
+                      ))}
                     </div>
                   )}
 
