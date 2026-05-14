@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.jsx";
+import { X, Swords, Trophy, Rocket, Coins, Brain, Ruler } from "lucide-react";
 
 const STARS = Array.from({ length: 30 }, () => ({
   w: 1 + Math.random() * 3,
@@ -47,7 +48,9 @@ function AuthModal({ onClose }) {
   return (
     <div style={ms.backdrop} onClick={onClose}>
       <div style={ms.card} onClick={e => e.stopPropagation()}>
-        <button style={ms.closeBtn} onClick={onClose}>✕</button>
+        <button style={ms.closeBtn} onClick={onClose} aria-label="Close">
+          <X size={18} color="rgba(255,255,255,.4)" />
+        </button>
         <div style={ms.tabRow}>
           {["login","register"].map(t => (
             <button key={t} style={{ ...ms.tabBtn, color: tab===t ? "#FF6B9D" : "rgba(255,255,255,.4)", borderBottom: `2px solid ${tab===t ? "#FF6B9D" : "transparent"}` }}
@@ -64,7 +67,12 @@ function AuthModal({ onClose }) {
           <input style={ms.input} type="password" placeholder="Password (min 6 chars)" value={form.password} onChange={set("password")} required minLength={6} />
           {error && <div style={ms.errorBox}>{error}</div>}
           <button type="submit" disabled={loading} style={{ ...ms.submitBtn, opacity: loading ? 0.6 : 1 }}>
-            {loading ? "Please wait..." : tab === "login" ? "⚔️ Enter Arena" : "🚀 Create Account"}
+            {loading ? "Please wait..." : tab === "login" ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <Swords size={18} />
+                <span>Enter Arena</span>
+              </div>
+            ) : "Create Account"}
           </button>
         </form>
       </div>
@@ -90,15 +98,24 @@ export default function HomeScreen() {
 
       {/* Nav */}
       <div style={s.nav}>
-        <span style={s.navLogo}>⚔️ CodeArena</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Swords size={20} color="#fff" />
+          <span style={s.navLogo}>CodeArena</span>
+        </div>
         <div style={{ display:"flex", gap:10, alignItems:"center" }}>
           {user ? (
             <>
-              <button style={s.navBtn} onClick={() => navigate("/leaderboard")}>🏆 Leaderboard</button>
+              <button style={s.navBtn} onClick={() => navigate("/leaderboard")} title="Leaderboard">
+                <Trophy size={16} style={{ marginRight: 6 }} />
+                Leaderboard
+              </button>
               <div style={s.userChip}>
-                <span style={{ fontSize:14 }}>🚀</span>
+                <Rocket size={14} color="currentColor" />
                 <span style={{ color:"#fff", fontWeight:800, fontSize:13 }}>{user.username}</span>
-                <span style={{ color:"#FDCB6E", fontWeight:900, fontSize:12 }}>💰 {user.credits ?? 0}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 4, color:"#FDCB6E", fontWeight:900, fontSize:12 }}>
+                  <Coins size={12} />
+                  {user.credits ?? 0}
+                </div>
               </div>
               <button style={s.navBtnGhost} onClick={logout}>Logout</button>
             </>
@@ -110,21 +127,23 @@ export default function HomeScreen() {
 
       {/* Hero */}
       <div style={s.hero}>
-        <div style={{ fontSize:64, filter:"drop-shadow(0 0 24px rgba(255,107,157,.65))", marginBottom:8, animation:"floatY 3.5s ease-in-out infinite" }}>⚔️</div>
+        <div style={{ fontSize:64, filter:"drop-shadow(0 0 24px rgba(255,107,157,.65))", marginBottom:8, animation:"floatY 3.5s ease-in-out infinite" }}>
+          <Swords size={64} color="#FF6B9D" strokeWidth={1.5} />
+        </div>
         <h1 style={s.heroTitle}>CODE ARENA</h1>
         <p style={s.heroSub}>Battle · Learn · Conquer</p>
         <p style={s.heroDesc}>Real-time 1v1 DSA battles. Learn a concept, enter the arena,<br />beat your opponent. Climb the weekly leaderboard.</p>
 
         {user && (
           <div style={s.statsStrip}>
-            <span style={{ fontSize:18 }}>🚀</span>
+            <Rocket size={16} color="#fff" />
             <span style={{ color:"#fff", fontWeight:800, fontSize:14 }}>{user.username}</span>
             <span style={s.div}>│</span>
-            <span style={{ fontSize:16 }}>💰</span>
+            <Coins size={16} color="#FDCB6E" />
             <span style={{ color:"#FDCB6E", fontWeight:900, fontSize:15 }}>{user.credits ?? 0}</span>
             <span style={{ color:"rgba(255,255,255,.4)", fontSize:12, fontWeight:600 }}>credits</span>
             <span style={s.div}>│</span>
-            <span style={{ fontSize:14 }}>⚡</span>
+            <Swords size={14} color="#A29BFE" />
             <span style={{ color:"#A29BFE", fontWeight:800, fontSize:13 }}>{user.elo ?? 1000} ELO</span>
           </div>
         )}
@@ -132,12 +151,14 @@ export default function HomeScreen() {
         <p style={s.chooseLabel}>Choose Your Arena</p>
         <div style={s.cardRow}>
           {[
-            { id:"dsa", icon:"🧠", title:"DSA", sub:"Data Structures\n& Algorithms", bg:"linear-gradient(148deg,#FF6B9D 0%,#C850C0 100%)", shadow:"#8B1A8B", glow:"rgba(200,80,192,.45)", info:"3 Topics · 15 Battles" },
-            { id:"aptitude", icon:"📐", title:"Aptitude", sub:"Quant · Verbal\nReasoning", bg:"linear-gradient(148deg,#00CEC9 0%,#0984E3 100%)", shadow:"#055A9E", glow:"rgba(9,132,227,.4)", info:"Coming Soon" },
+            { id:"dsa", icon: <Brain size={52} color="currentColor" />, title:"DSA", sub:"Data Structures\n& Algorithms", bg:"linear-gradient(148deg,#FF6B9D 0%,#C850C0 100%)", shadow:"#8B1A8B", glow:"rgba(200,80,192,.45)", info:"3 Topics · 15 Battles" },
+            { id:"aptitude", icon: <Ruler size={52} color="currentColor" />, title:"Aptitude", sub:"Quant · Verbal\nReasoning", bg:"linear-gradient(148deg,#00CEC9 0%,#0984E3 100%)", shadow:"#055A9E", glow:"rgba(9,132,227,.4)", info:"Coming Soon" },
           ].map(t => (
             <button key={t.id} onClick={() => handleTrack(t.id)} disabled={t.id==="aptitude"}
               style={{ ...s.trackCard, background:t.bg, boxShadow:`0 8px 0 ${t.shadow}, 0 14px 35px ${t.glow}`, opacity: t.id==="aptitude" ? 0.6 : 1, cursor: t.id==="aptitude" ? "not-allowed" : "pointer" }}>
-              <div style={{ fontSize:52, marginBottom:8, filter:"drop-shadow(0 4px 8px rgba(0,0,0,.3))" }}>{t.icon}</div>
+              <div style={{ marginBottom:8, filter:"drop-shadow(0 4px 8px rgba(0,0,0,.3))" }}>
+                {t.icon}
+              </div>
               <div style={s.cardTitle}>{t.title}</div>
               <div style={s.cardSub}>{t.sub}</div>
               <div style={s.cardBadge}>{t.info}</div>
@@ -146,7 +167,7 @@ export default function HomeScreen() {
         </div>
 
         <button style={s.lbBtn} onClick={() => user ? navigate("/leaderboard") : setShowAuth(true)}>
-          <span style={{ fontSize:20 }}>🏆</span>
+          <Trophy size={20} color="currentColor" />
           <span style={s.shimmerGold}>Weekly Leaderboard</span>
         </button>
 
