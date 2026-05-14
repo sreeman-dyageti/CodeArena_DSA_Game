@@ -5,6 +5,7 @@ import { useSocket } from "../hooks/useSocket.js";
 import Timer from "../components/Timer.jsx";
 import ResultOverlay from "../components/ResultOverlay.jsx";
 import api from "../api/index.js";
+import { Swords, Ghost, ArrowLeft } from "lucide-react";
 
 const BATTLE_SECONDS = 15 * 60; // 15 minutes
 
@@ -211,7 +212,9 @@ export default function BattleScreen() {
     return (
       <div style={styles.bg}>
         <div style={styles.center}>
-          <div style={styles.spinIcon}>⚔️</div>
+          <div style={styles.spinIcon}>
+            <Swords size={56} color="#FF6B9D" strokeWidth={1.5} />
+          </div>
           <h2 style={styles.queueTitle}>Finding Opponent...</h2>
           <p style={styles.queueSub}>
             {connected
@@ -242,7 +245,9 @@ export default function BattleScreen() {
     return (
       <div style={styles.bg}>
         <div style={styles.center}>
-          <div style={{ fontSize: 56, marginBottom: 16 }}>👻</div>
+          <div style={{ marginBottom: 16 }}>
+            <Ghost size={56} color="#A0AEC0" />
+          </div>
           <h2 style={styles.queueTitle}>No Opponent Available</h2>
           <p style={styles.queueSub}>
             No ghost replay found for this level yet. Be the first to solve it and create one!
@@ -251,7 +256,8 @@ export default function BattleScreen() {
             style={styles.primaryBtn}
             onClick={() => navigate(`/learn/${levelId}`)}
           >
-            ← Back to Learn
+            <ArrowLeft size={16} style={{ marginRight: 6 }} />
+            Back to Learn
           </button>
         </div>
       </div>
@@ -314,8 +320,8 @@ export default function BattleScreen() {
 
         {/* Opponent */}
         <div style={{ ...styles.playerChip, flexDirection: "row-reverse" }}>
-          <div style={{ ...styles.avatar, background: "linear-gradient(135deg,#FDCB6E,#FF9F43)" }}>
-            {opponentType === "ghost" ? "👻" : opponentName[0]?.toUpperCase() ?? "O"}
+          <div style={{ ...styles.avatar, background: "linear-gradient(135deg,#FDCB6E,#FF9F43)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {opponentType === "ghost" ? <Ghost size={20} color="currentColor" /> : opponentName[0]?.toUpperCase() ?? "O"}
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={styles.playerName}>{opponentName}</div>
