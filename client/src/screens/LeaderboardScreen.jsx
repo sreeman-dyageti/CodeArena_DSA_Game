@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/index.js";
 import { useAuth } from "../hooks/useAuth.jsx";
+import { ArrowLeft, Trophy, Clock, Crown, Medal, Zap, Swords } from "lucide-react";
 
 function msUntilNextMonday() {
   const now = new Date();
@@ -58,10 +59,18 @@ export default function LeaderboardScreen() {
 
       {/* Header */}
       <div style={s.header}>
-        <button onClick={() => navigate("/")} style={s.backBtn}>←</button>
+        <button onClick={() => navigate("/")} style={s.backBtn} aria-label="Back">
+          <ArrowLeft size={20} />
+        </button>
         <div style={{ flex:1, textAlign:"center" }}>
-          <div style={s.headerTitle}>🏆 Weekly Leaderboard</div>
-          <div style={s.headerSub}>🕐 Resets in {fmtCountdown(countdown)}</div>
+          <div style={s.headerTitle}>
+            <Trophy size={20} style={{ marginRight: 8, display: "inline" }} />
+            Weekly Leaderboard
+          </div>
+          <div style={s.headerSub}>
+            <Clock size={14} style={{ marginRight: 4, display: "inline" }} />
+            Resets in {fmtCountdown(countdown)}
+          </div>
         </div>
         <div style={{ width:40 }} />
       </div>
@@ -81,7 +90,11 @@ export default function LeaderboardScreen() {
                     <div style={{ fontSize: i===1 ? 28 : 24, marginBottom: 2 }}>
                       {entry?.username?.[0]?.toUpperCase() ?? "?"}
                     </div>
-                    {i === 1 && <div style={{ fontSize:20, marginBottom:2, filter:"drop-shadow(0 2px 6px rgba(255,215,0,.8))" }}>👑</div>}
+                    {i === 1 && (
+                      <div style={{ marginBottom:2, filter:"drop-shadow(0 2px 6px rgba(255,215,0,.8))" }}>
+                        <Crown size={20} color="#FFD700" fill="#FFD700" />
+                      </div>
+                    )}
                     <div style={{ ...s.podiumBlock, height: podiumHeights[i], width: i===1 ? 90 : 80, background: podiumColors[i], boxShadow: podiumShadows[i] }}>
                       <div style={s.podiumRank}>{podiumRanks[i]}</div>
                       <div style={s.podiumName}>{entry?.username ?? "—"}</div>
@@ -97,16 +110,22 @@ export default function LeaderboardScreen() {
           <div style={s.listWrap}>
             {rows.length === 0 && (
               <div style={s.emptyState}>
-                No battles yet this week. Be the first to earn credits! ⚔️
+                No battles yet this week. Be the first to earn credits!{" "}
+                <Swords size={16} style={{ marginLeft: 4, display: "inline" }} />
               </div>
             )}
             {rows.map((row, i) => {
               const isMe = row.user_id === user?.id;
+              const medalIcons = [
+                <Medal key="silver" size={16} color="#BDBDBD" fill="#BDBDBD" />,
+                <Medal key="gold" size={16} color="#FFD700" fill="#FFD700" />,
+                <Medal key="bronze" size={16} color="#CD7F32" fill="#CD7F32" />,
+              ];
               return (
                 <div key={row.user_id} style={{ ...s.listRow, background: isMe ? "rgba(255,107,157,.1)" : "rgba(255,255,255,.04)", border: `${isMe ? "1.5px" : "1px"} solid ${isMe ? "rgba(255,107,157,.35)" : "rgba(255,255,255,.06)"}` }}>
                   {/* Rank */}
-                  <div style={{ ...s.rankBadge, background: i<3 ? [podiumColors[0],podiumColors[1],podiumColors[2]][i] : "rgba(255,255,255,.1)" }}>
-                    {i < 3 ? ["🥈","🥇","🥉"][i] : i + 1}
+                  <div style={{ ...s.rankBadge, background: i<3 ? [podiumColors[0],podiumColors[1],podiumColors[2]][i] : "rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {i < 3 ? medalIcons[i] : i + 1}
                   </div>
                   {/* Avatar initial */}
                   <div style={{ ...s.avatar, background: isMe ? "linear-gradient(135deg,#FF6B9D,#C850C0)" : "rgba(255,255,255,.1)" }}>
@@ -117,8 +136,9 @@ export default function LeaderboardScreen() {
                     <div style={{ color: isMe ? "#FF6B9D" : "#fff", fontWeight:900, fontSize:13 }}>
                       {row.username}{isMe ? " (You)" : ""}
                     </div>
-                    <div style={{ color:"rgba(255,255,255,.4)", fontSize:11, fontWeight:700 }}>
-                      ⚡ {row.elo ?? 1000} ELO
+                    <div style={{ color:"rgba(255,255,255,.4)", fontSize:11, fontWeight:700, display: "flex", alignItems: "center", gap: 4 }}>
+                      <Zap size={12} color="#A29BFE" />
+                      {row.elo ?? 1000} ELO
                     </div>
                   </div>
                   {/* Credits */}
