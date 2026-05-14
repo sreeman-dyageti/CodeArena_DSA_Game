@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api/index.js";
+import { ArrowLeft, Monitor, BookOpen, Lightbulb, Play, Clock, ArrowUpRight, Check, Swords } from "lucide-react";
 
 // Hardcoded YouTube links per topic for MVP
 const VIDEOS = {
@@ -49,7 +50,10 @@ export default function LearnScreen() {
   if (error || !level) return (
     <div style={{ ...bg, display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh", flexDirection:"column", gap:16 }}>
       <div style={{ color:"#FF6B81", fontSize:15 }}>{error || "Level not found"}</div>
-      <button style={s.backBtn2} onClick={() => navigate(-1)}>← Go Back</button>
+      <button style={s.backBtn2} onClick={() => navigate(-1)}>
+        <ArrowLeft size={16} style={{ marginRight: 4 }} />
+        Go Back
+      </button>
     </div>
   );
 
@@ -61,7 +65,9 @@ export default function LearnScreen() {
 
       {/* Header */}
       <div style={s.header}>
-        <button onClick={() => navigate(-1)} style={s.backBtn}>←</button>
+        <button onClick={() => navigate(-1)} style={s.backBtn} aria-label="Back">
+          <ArrowLeft size={20} />
+        </button>
         <div style={{ flex:1 }}>
           <div style={s.headerTitle}>{level.topic} — {level.sub_topic}</div>
           <div style={s.headerSub}>Level {level.order_num} · {level.difficulty}</div>
@@ -74,11 +80,11 @@ export default function LearnScreen() {
       {/* Tabs */}
       <div style={s.tabRow}>
         {[
-          { id:"video",   label:"📺 Watch" },
-          { id:"concept", label:"📖 Concept" },
+          { id:"video",   label: <><Monitor size={14} style={{ marginRight: 4 }} />Watch</>, icon: Monitor },
+          { id:"concept", label: <><BookOpen size={14} style={{ marginRight: 4 }} />Concept</>, icon: BookOpen },
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            style={{ ...s.tabBtn, color: tab===t.id ? diffColor : "rgba(255,255,255,.35)", borderBottom: `2.5px solid ${tab===t.id ? diffColor : "transparent"}` }}>
+            style={{ ...s.tabBtn, color: tab===t.id ? diffColor : "rgba(255,255,255,.35)", borderBottom: `2.5px solid ${tab===t.id ? diffColor : "transparent"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
             {t.label}
           </button>
         ))}
@@ -90,26 +96,41 @@ export default function LearnScreen() {
         {/* ── VIDEO TAB ── */}
         {tab === "video" && (
           <div>
-            <p style={s.sectionHint}>🎓 Watch these videos to understand the concept before battling:</p>
+            <p style={s.sectionHint}>
+              <Lightbulb size={14} style={{ marginRight: 6, display: "inline" }} />
+              Watch these videos to understand the concept before battling:
+            </p>
             {videos.map((v, i) => (
               <a key={i} href={v.url} target="_blank" rel="noopener noreferrer" style={s.videoCard}>
-                <div style={s.videoThumb}>▶</div>
+                <div style={s.videoThumb}>
+                  <Play size={20} color="currentColor" fill="currentColor" />
+                </div>
                 <div style={{ flex:1 }}>
                   <div style={s.videoTitle}>{v.title}</div>
-                  <div style={s.videoMeta}>{v.channel} · ⏱ {v.dur}</div>
+                  <div style={s.videoMeta}>
+                    {v.channel} · 
+                    <Clock size={12} style={{ marginLeft: 4, marginRight: 2, display: "inline" }} />
+                    {v.dur}
+                  </div>
                 </div>
-                <div style={{ fontSize:16, opacity:.5 }}>↗</div>
+                <div style={{ opacity:.5 }}>
+                  <ArrowUpRight size={16} />
+                </div>
               </a>
             ))}
 
             {/* Enter battle CTA */}
             <div style={s.ctaBox}>
-              <p style={s.ctaText}>✅ Watched enough? Test your skills in a real battle!</p>
+              <p style={s.ctaText}>
+                <Check size={16} style={{ marginRight: 6, display: "inline" }} />
+                Watched enough? Test your skills in a real battle!
+              </p>
               <button
                 style={s.battleBtn}
                 onClick={() => navigate(`/battle/${levelId}`, { state: { problem: level } })}
               >
-                ⚔️ Enter Battle
+                <Swords size={16} style={{ marginRight: 6 }} />
+                Enter Battle
               </button>
             </div>
           </div>
@@ -184,7 +205,8 @@ export default function LearnScreen() {
                 style={s.battleBtn}
                 onClick={() => navigate(`/battle/${levelId}`, { state: { problem: level } })}
               >
-                ⚔️ Enter Battle
+                <Swords size={16} style={{ marginRight: 6 }} />
+                Enter Battle
               </button>
             </div>
           </div>
