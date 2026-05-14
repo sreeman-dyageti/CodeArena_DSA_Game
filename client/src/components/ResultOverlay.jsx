@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { Trophy, Flame, MapPin, RotateCw } from "lucide-react";
 
 /**
  * Props:
@@ -23,7 +24,13 @@ export default function ResultOverlay({ result, levelId, topic }) {
     <div style={styles.overlay}>
       <div style={styles.card}>
         {/* Icon */}
-        <div style={styles.icon}>{won ? "🏆" : "💪"}</div>
+        <div style={styles.icon}>
+          {won ? (
+            <Trophy size={60} color="#2ED573" fill="#2ED573" />
+          ) : (
+            <Flame size={60} color="#FF6B9D" />
+          )}
+        </div>
 
         {/* Title */}
         <h2 style={{ ...styles.title, color: won ? "#2ED573" : "#FF6B9D" }}>
@@ -61,19 +68,22 @@ export default function ResultOverlay({ result, levelId, topic }) {
             style={styles.primaryBtn}
             onClick={() => navigate(topic ? `/topic/${encodeURIComponent(topic)}` : `/map/dsa`)}
           >
-            🗺️ Continue Journey
+            <MapPin size={16} style={{ marginRight: 8 }} />
+            Continue Journey
           </button>
           <button
             style={styles.secondaryBtn}
             onClick={() => navigate(`/learn/${levelId}`)}
           >
-            🔁 Try Again
+            <RotateCw size={16} style={{ marginRight: 8 }} />
+            Try Again
           </button>
           <button
             style={styles.ghostBtn}
             onClick={() => navigate("/leaderboard")}
           >
-            🏆 View Leaderboard
+            <Trophy size={16} style={{ marginRight: 8 }} />
+            View Leaderboard
           </button>
         </div>
       </div>
